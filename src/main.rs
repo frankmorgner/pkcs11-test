@@ -131,11 +131,20 @@ fn pkcs11_slots_matches(pkcs11_result: &Result<Vec<Slot>>,
     match pkcs11_result {
         Ok(slots) => {
             let actual_slotlist_length = substitute_variable(slotlist_length, &slots.len().to_string(), variables);
-            let actual_slotid = substitute_variable(slot_id, &slots[0].id().to_string(), variables);
             if rv == "OK"
-                && actual_slotlist_length == slots.len().to_string()
-                    && actual_slotid == slots[0].id().to_string() {
-                true
+                && actual_slotlist_length == slots.len().to_string() {
+                    if slots.len() == 0 {
+                        true
+                    } else {
+                        let actual_slotid = substitute_variable(slot_id, &slots[0].id().to_string(), variables);
+                        if actual_slotid == slots[0].id().to_string() {
+                            true
+                        } else {
+                            println!("  SlotList length {:?} vs {:?} (SlotID doesn't match)", slots.len(), actual_slotlist_length);
+
+                            false
+                        }
+                    }
             } else {
                 println!("  SlotList length {:?} vs {:?}", slots.len(), actual_slotlist_length);
 
@@ -1117,10 +1126,14 @@ fn run_test(test_case: &str) {
                         if action == "C_GetAttributeValue" {
                             action = "C_GetAttributeValue result";
                         } else {
-                            let pkcs11_result = session[0].get_attributes(
-                                objects[0], &attribute_types);
-                            if pkcs11_get_attributes_matches(&pkcs11_result, &rv, &template) {
-                                println!("PASS");
+                            if session.len() > 0 {
+                                let pkcs11_result = session[0].get_attributes(
+                                    objects[0], &attribute_types);
+                                if pkcs11_get_attributes_matches(&pkcs11_result, &rv, &template) {
+                                    println!("PASS");
+                                } else {
+                                    println!("FAIL");
+                                }
                             } else {
                                 println!("FAIL");
                             }
@@ -1131,10 +1144,14 @@ fn run_test(test_case: &str) {
                         if action == "C_Sign" {
                             action = "C_Sign result";
                         } else {
-                            let d = hex_to_bytes(data.as_str()).unwrap();
-                            let pkcs11_result = session[0].sign(&mechanism[0], objects[0], &d);
-                            if pkcs11_sign_matches(&pkcs11_result, &rv, &signature) {
-                                println!("PASS");
+                            if session.len() > 0 {
+                                let d = hex_to_bytes(data.as_str()).unwrap();
+                                let pkcs11_result = session[0].sign(&mechanism[0], objects[0], &d);
+                                if pkcs11_sign_matches(&pkcs11_result, &rv, &signature) {
+                                    println!("PASS");
+                                } else {
+                                    println!("FAIL");
+                                }
                             } else {
                                 println!("FAIL");
                             }
@@ -1201,21 +1218,22 @@ fn run_test(test_case: &str) {
 }
 
 fn main() {
+    println!("Starting test");
     println!("BL-M-1-31.xml");
     const BL: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/BL-M-1-31.xml");
     run_test(BL);
 
-    println!("");
+    println!("\nStarting test");
     println!("AUTH-M-1-31.xml");
     const AUTH: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/AUTH-M-1-31.xml");
     run_test(AUTH);
 
-    println!("");
+    println!("\nStarting test");
     println!("AUTH-M-1-31.xml");
     const CERT: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/CERT-M-1-31.xml");
     run_test(CERT);
 
-    println!("");
+    println!("\nStarting test");
     println!("EXT-M-1-31.xml");
     const EXT: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/EXT-M-1-31.xml");
     run_test(EXT);
