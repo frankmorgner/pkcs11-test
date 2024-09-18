@@ -23,8 +23,27 @@ use cryptoki::object::ObjectHandle;
 use cryptoki::session::UserType;
 use cryptoki::types::AuthPin;
 use cryptoki::object::ObjectClass;
+use clap::Parser;
+use std::env;
 
 static STRICT: bool = false;
+
+
+#[derive(Parser, Debug)]
+/// Run PKCS#11 conformance tests
+///
+/// This program currently runs all mandatory conformance test cases from the PKCS#11 v3.1 profiles
+/// (Baseline Provider BL-M-1-31, Extended Provider EXT-M-1-31, Authentication Token Provider
+/// AUTH-M-1-31, Public Certificates Token Provider CERT-M-1-31)
+///
+/// See https://docs.oasis-open.org/pkcs11/pkcs11-profiles/v3.1/os/pkcs11-profiles-v3.1-os.html for
+/// reference
+#[command(version, about)]
+struct Args {
+    /// filename of the PKCS#11 module
+    #[arg(short, long)]
+    module: String,
+}
 
 fn hex_to_bytes(s: &str) -> Option<Vec<u8>> {
     if s.len() % 2 == 0 {
@@ -114,7 +133,17 @@ fn pkcs11_info_matches(pkcs11_result: &Result<Info>,
 fn substitute_variable(value: &String, actual_value: &String, variables: &mut HashMap<String, String>) -> String {
     if value.starts_with('$') {
         // this is a variable
+
+        // if not yet set, environment variables are used as default
+        let var = &value[2..value.len()-1];
+        let val = env::var(var);
+        if val.is_ok() {
+            variables.entry(value.to_owned()).or_insert(val.unwrap().to_owned());
+        }
+
+        // if still not set, `actual_value` is used as default
         variables.entry(value.to_owned()).or_insert(actual_value.to_owned());
+
         variables.get(value).unwrap().to_owned()
     } else {
         // value can stay as it is
@@ -515,7 +544,7 @@ fn pkcs11_mechanism_info_matches(pkcs11_result: &Result<MechanismInfo>,
     }
 }
 
-fn run_test(test_case: &str) {
+fn run_test(test_case: &str, module: &str) {
     let mut reader = Reader::from_str(test_case);
 
     let mut buf = Vec::new();
@@ -566,8 +595,7 @@ fn run_test(test_case: &str) {
     let mut signature = "".to_owned();
     let mut max_key_size = "0".to_owned();
     let mut min_key_size = "0".to_owned();
-    // TODO
-    let pin = AuthPin::new("11111111".into());
+    let mut pin = "".to_owned();
 
     loop {
         match reader.read_event_into(&mut buf) {
@@ -707,7 +735,7 @@ fn run_test(test_case: &str) {
                             action = "C_Initialize";
                         } else {
                             // process response
-                            let p11 = Pkcs11::new("/Users/morgnfra/.local/lib/pkcs11/opensc-pkcs11.so").unwrap();
+                            let p11 = Pkcs11::new(module).unwrap();
                             let pkcs11_result = p11.initialize(CInitializeArgs::OsThreads);
                             pkcs11.push(p11);
                             if let Some(attribute) = e.try_get_attribute("rv").unwrap() {
@@ -872,6 +900,9 @@ fn run_test(test_case: &str) {
                             }
                         }
                     },
+                    b"Pin" => {
+                        pin = get_attribute(&e, "value", "");
+                    },
                     b"Object" => {
                         object_length = get_attribute(&e, "length", "1");
                     },
@@ -932,6 +963,7 @@ fn run_test(test_case: &str) {
                         // process response
                         let mut status = "FAIL";
                         let mut t = UserType::User;
+                        let secret = AuthPin::new(substitute_variable(&pin, &pin, &mut variables));
                         match user_type.as_str() {
                             "USER" => t = UserType::User,
                             "SO" => t = UserType::So,
@@ -939,7 +971,7 @@ fn run_test(test_case: &str) {
                             _ => (),
                         }
                         if !session.is_empty() {
-                            let pkcs11_result = session[0].login(t, Some(&pin));
+                            let pkcs11_result = session[0].login(t, Some(&secret));
                             if let Some(attribute) = e.try_get_attribute("rv").unwrap() {
                                 if attribute.value == pkcs11_result_to_bytes(&pkcs11_result) {
                                     status = "PASS";
@@ -1218,23 +1250,25 @@ fn run_test(test_case: &str) {
 }
 
 fn main() {
+    let args = Args::parse();
+
     println!("Starting test");
     println!("BL-M-1-31.xml");
     const BL: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/BL-M-1-31.xml");
-    run_test(BL);
+    run_test(BL, &args.module);
 
     println!("\nStarting test");
     println!("AUTH-M-1-31.xml");
     const AUTH: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/AUTH-M-1-31.xml");
-    run_test(AUTH);
+    run_test(AUTH, &args.module);
 
     println!("\nStarting test");
     println!("AUTH-M-1-31.xml");
     const CERT: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/CERT-M-1-31.xml");
-    run_test(CERT);
+    run_test(CERT, &args.module);
 
     println!("\nStarting test");
     println!("EXT-M-1-31.xml");
     const EXT: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/EXT-M-1-31.xml");
-    run_test(EXT);
+    run_test(EXT, &args.module);
 }
