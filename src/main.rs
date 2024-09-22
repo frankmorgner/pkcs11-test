@@ -43,6 +43,10 @@ struct Args {
     /// filename of the PKCS#11 module
     #[arg(short, long)]
     module: String,
+
+    /// test case (disables integrated tests)
+    #[arg(num_args(0..))]
+    tests: Option<Vec<String>>,
 }
 
 fn hex_to_bytes(s: &str) -> Option<Vec<u8>> {
@@ -1252,23 +1256,31 @@ fn run_test(test_case: &str, module: &str) {
 fn main() {
     let args = Args::parse();
 
-    println!("Starting test");
-    println!("BL-M-1-31.xml");
-    const BL: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/BL-M-1-31.xml");
-    run_test(BL, &args.module);
+    if args.tests.is_some() {
+        for test in args.tests.unwrap().into_iter() {
+            println!("Starting test");
+            println!("{:?}", test);
+            run_test(std::fs::read_to_string(&test).unwrap().as_str(), &args.module);
+        }
+    } else {
+        println!("Starting test");
+        println!("BL-M-1-31.xml");
+        const BL: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/BL-M-1-31.xml");
+        run_test(BL, &args.module);
 
-    println!("\nStarting test");
-    println!("AUTH-M-1-31.xml");
-    const AUTH: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/AUTH-M-1-31.xml");
-    run_test(AUTH, &args.module);
+        println!("\nStarting test");
+        println!("AUTH-M-1-31.xml");
+        const AUTH: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/AUTH-M-1-31.xml");
+        run_test(AUTH, &args.module);
 
-    println!("\nStarting test");
-    println!("AUTH-M-1-31.xml");
-    const CERT: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/CERT-M-1-31.xml");
-    run_test(CERT, &args.module);
+        println!("\nStarting test");
+        println!("AUTH-M-1-31.xml");
+        const CERT: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/CERT-M-1-31.xml");
+        run_test(CERT, &args.module);
 
-    println!("\nStarting test");
-    println!("EXT-M-1-31.xml");
-    const EXT: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/EXT-M-1-31.xml");
-    run_test(EXT, &args.module);
+        println!("\nStarting test");
+        println!("EXT-M-1-31.xml");
+        const EXT: &str = include_str!("test-cases/pkcs11-v3.1/mandatory/EXT-M-1-31.xml");
+        run_test(EXT, &args.module);
+    }
 }
