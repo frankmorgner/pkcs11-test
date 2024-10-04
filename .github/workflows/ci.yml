@@ -1,0 +1,25 @@
+name: Continious Integration
+
+permissions:  # added using https://github.com/step-security/secure-repo
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-14
+    env:
+      MACOSX_DEPLOYMENT_TARGET: 10.7
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - run: cargo build --release --target x86_64-apple-darwin --locked
+
+  ubuntu:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - run: cargo build --release --target x86_64-unknown-linux-musl --locked
+
+  windows-32:
+    runs-on: windows-2022
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - run: cargo build --release --target i686-pc-windows-msvc --locked
