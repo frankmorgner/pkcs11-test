@@ -34,10 +34,9 @@ jobs:
       - uses: actions/checkout@v4
       - run: rustup target add ${{ matrix.target }}
       - run: cargo build --release --target ${{ matrix.target }}
-      - run: find .
       - uses: actions/upload-artifact@v4
         with:
           name: pkcs11-test_${{ matrix.target }}
           path: |
-            target/${{ matrix.target }}/release/pkcs11-test
+            target/${{ matrix.target }}/release/pkcs11-test*
             README.md
