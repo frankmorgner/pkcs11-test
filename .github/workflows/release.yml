@@ -34,10 +34,11 @@ jobs:
       - uses: actions/checkout@v4
       - run: rustup target add ${{ matrix.target }}
       - run: cargo build --release --target ${{ matrix.target }}
-      - run: zip --junk-paths pkcs11-test_${{ matrix.target }}.zip target/release/pkcs11-test* README.md
+      - run: find .
       - uses: actions/upload-artifact@v4
         with:
-          path: pkcs11-test_${{ matrix.target }}.zip
+          name: pkcs11-test_${{ matrix.target }}
+          path: target/release/pkcs11-test* README.md
 
 #jobs:
   #macos-x86:
