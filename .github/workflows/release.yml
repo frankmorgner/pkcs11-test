@@ -84,7 +84,7 @@ jobs:
     steps:
     - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
     - run: sudo apt-get install musl-dev
-    - run: locate aarch64-linux-musl-gcc
+    - run: ls /usr/bin/aarch64-linux-musl-gcc
     - run: rustup target add aarch64-unknown-linux-musl
     - run: cargo build --release --target aarch64-unknown-linux-musl
 
