@@ -38,49 +38,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: pkcs11-test_${{ matrix.target }}
-          path: target/release/pkcs11-test* README.md
-
-#jobs:
-  #macos-x86:
-    #runs-on: macos-14
-    #steps:
-    #- uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  v2.7.0
-    #- run: rustup target add x86_64-apple-darwin
-    #- run: cargo build --release --target x86_64-apple-darwin
-
-  #macos-arm:
-    #runs-on: macos-14
-    #steps:
-    #- uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  v2.7.0
-    #- run: rustup target add aarch64-apple-darwin
-    #- run: cargo build --release --target aarch64-apple-darwin
-
-  #ubuntu-x86:
-    #runs-on: ubuntu-24.04
-    #steps:
-    #- uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  v2.7.0
-    #- run: rustup target add x86_64-unknown-linux-musl
-    #- run: cargo build --release --target x86_64-unknown-linux-musl
-
-  #ubuntu-arm:
-    #runs-on: ubuntu-24.04
-    #steps:
-    #- uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  v2.7.0
-    #- run: sudo apt-get install musl-dev
-    #- run: ls /usr/bin/aarch64-linux-musl-gcc
-    #- run: rustup target add aarch64-unknown-linux-musl
-    #- run: cargo build --release --target aarch64-unknown-linux-musl
-
-  #windows-x86:
-    #runs-on: windows-2022
-    #steps:
-    #- uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  v2.7.0
-    #- run: rustup target add x86_64-pc-windows-msvc
-    #- run: cargo build --release --target x86_64-pc-windows-msvc
-
-  #windows-arm:
-    #runs-on: windows-2022
-    #steps:
-    #- uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  v2.7.0
-    #- run: rustup target add aarch64-pc-windows-msvc
-    #- run: cargo build --release --target aarch64-pc-windows-msvc
+          path: |
+            target/${{ matrix.target }}/release/pkcs11-test
+            README.md
