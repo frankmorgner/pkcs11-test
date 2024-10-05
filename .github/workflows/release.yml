@@ -3,88 +3,99 @@ name: Release
 on:
   push:
 
-permissions:  # added using https://github.com/step-security/secure-repo
+permissions:
   contents: read
 
-jobs:
-  build:
-    strategy:
-      matrix:
-        include:
-          # Windows
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-          # macOS
-          - os: macos-latest
-            target: x86_64-apple-darwin
-          - os: macos-latest
-            target: aarch64-apple-darwin
-          # Linux
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-musl
-            download: true
-            apt-get: true
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            download: true
-            apt-get: true
-
-
-    name: Build ${{ matrix.target }}
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install xmllint
-        if: ${{ matrix.apt-get }}
-        run: |
-          sudo apt-get install -y musl-dev
-
-      # Cargo already skips downloading dependencies if they already exist
-      - name: Cache cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Install Rust (Stable)
-        if: ${{ matrix.download }}
-        run: |
-          rustup default stable
-
-      - name: Setup rust target
-        run: rustup target add ${{ matrix.target }}
-
-      - name: Build release
-        run: cargo build --release --target ${{ matrix.target }}
-
-
-
 #jobs:
-  #macos:
-    #runs-on: macos-14
-    #env:
-      #MACOSX_DEPLOYMENT_TARGET: 10.7
-    #steps:
-    #- uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
-    #- run: rustup target add x86_64-apple-darwin
-    #- run: cargo build --release --target x86_64-apple-darwin
+  #build:
+    #strategy:
+      #matrix:
+        #include:
+          ## Windows
+          #- os: windows-latest
+            #target: x86_64-pc-windows-msvc
+          ## macOS
+          #- os: macos-latest
+            #target: aarch64-apple-darwin
+          ## Linux
+          #- os: ubuntu-latest
+            #target: aarch64-unknown-linux-musl
+            #download: true
+            #apt-get: true
 
-  #ubuntu:
-    #runs-on: ubuntu-24.04
-    #steps:
-    #- uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
-    #- run: rustup target add x86_64-unknown-linux-musl
-    #- run: cargo build --release --target x86_64-unknown-linux-musl
 
-  #windows-32:
-    #runs-on: windows-2022
+    #name: Build ${{ matrix.target }}
+    #runs-on: ${{ matrix.os }}
     #steps:
-    #- uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
-    #- run: rustup target add i686-pc-windows-msvc
-    #- run: cargo build --release --target i686-pc-windows-msvc
+      #- uses: actions/checkout@v4
+
+      #- name: Install xmllint
+        #if: ${{ matrix.apt-get }}
+        #run: |
+          #sudo apt-get install -y musl-dev
+
+      ## Cargo already skips downloading dependencies if they already exist
+      #- name: Cache cargo
+        #uses: actions/cache@v4
+        #with:
+          #path: |
+            #~/.cargo/bin/
+            #~/.cargo/registry/index/
+            #~/.cargo/registry/cache/
+            #~/.cargo/git/db/
+            #target/
+          #key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      #- name: Install Rust (Stable)
+        #if: ${{ matrix.download }}
+        #run: |
+          #rustup default stable
+
+      #- name: Setup rust target
+        #run: rustup target add ${{ matrix.target }}
+
+      #- name: Build release
+        #run: cargo build --release --target ${{ matrix.target }}
+
+jobs:
+  macos-x86:
+    runs-on: macos-14
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - run: rustup target add x86_64-apple-darwin
+    - run: cargo build --release --target x86_64-apple-darwin
+
+  macos-arm:
+    runs-on: macos-14
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - run: rustup target add aarch64-apple-darwin
+    - run: cargo build --release --target aarch64-apple-darwin
+
+  ubuntu-x86:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - run: rustup target add x86_64-unknown-linux-musl
+    - run: cargo build --release --target x86_64-unknown-linux-musl
+
+  ubuntu-arm:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - run: rustup target add aarch64-unknown-linux-musl
+    - run: cargo build --release --target aarch64-unknown-linux-musl
+
+  windows-x86:
+    runs-on: windows-2022
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - run: rustup target add x86_64-pc-windows-msvc
+    - run: cargo build --release --target x86_64-pc-windows-msvc
+
+  windows-arm:
+    runs-on: windows-2022
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - run: rustup target add aarch64-pc-windows-msvc
+    - run: cargo build --release --target aarch64-pc-windows-msvc
