@@ -1,52 +1,154 @@
-# Run PKCS#11 Conformance Test Cases
+# Run PKCS#11 XML Scripts
 
 `pkcs11-test` allows running conformance test cases against a pkcs#11 provider.
 The test cases were first defined in PKCS#11 version 3.1 and they include an
 informal description along with a test case description given in dedicated XML
 files.
 
-`pkcs11-test` ships with the following test cases included:
-- [Baseline Provider](https://docs.oasis-open.org/pkcs11/pkcs11-profiles/v3.1/os/pkcs11-profiles-v3.1-os.html#_Toc142307335) [BL-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/BL-M-1-31.xml)
-- [Extended Provider](https://docs.oasis-open.org/pkcs11/pkcs11-profiles/v3.1/os/pkcs11-profiles-v3.1-os.html#_Toc142307339) [EXT-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/EXT-M-1-31.xml)
-- [Authentication Token Provider](https://docs.oasis-open.org/pkcs11/pkcs11-profiles/v3.1/os/pkcs11-profiles-v3.1-os.html#_Toc142307342) [AUTH-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/AUTH-M-1-31.xml)
-- [Public Certificates Token Provider](https://docs.oasis-open.org/pkcs11/pkcs11-profiles/v3.1/os/pkcs11-profiles-v3.1-os.html#_Toc142307345) [CERT-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/CERT-M-1-31.xml)
+If no XML input files are specified, this program reads STDIN for PKCS#11 XML commands. All
+commands are performed with the given PKCS#11 module in the order in which they appear at
+the input.
 
-To run the tests against your PKCS#11 module, execute the following command:
+`pkcs11-test` ships with the following test cases included (both version are supported):
+- Baseline Provider [BL-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/BL-M-1-31.xml)/[BL-M-1-32](src/test-cases/pkcs11-v3.2/mandatory/BL-M-1-32.xml)
+- Extended Provider [EXT-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/EXT-M-1-31.xml) [EXT-M-1-32](src/test-cases/pkcs11-v3.2/mandatory/EXT-M-1-32.xml)
+- Authentication Token Provider [AUTH-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/AUTH-M-1-31.xml)/[AUTH-M-1-32](src/test-cases/pkcs11-v3.2/mandatory/AUTH-M-1-32.xml)
+- Public Certificates Token Provider [CERT-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/CERT-M-1-31.xml)/[CERT-M-1-32](src/test-cases/pkcs11-v3.2/mandatory/CERT-M-1-32.xml)
+
+To run *AUTH-M-1-31* against your PKCS#11 module, execute the following command:
 ```sh
-env Pin=123456 pkcs11-test --module /path/to/pkcs11-module.so
+env Pin=123456 pkcs11-test --module /path/to/pkcs11-module.so AUTH-M-1-31.xml
 ```
 The above command passes the token's PIN via the environment variable `$Pin`,
 which will be used for AUTH-M-1-31. For Windows, the calling convention needs
 to be adjusted as follows:
 ```cmd
 set Pin=123456
-pkcs11-test.exe --module /path/to/pkcs11-module.dll
+pkcs11-test.exe --module /path/to/pkcs11-module.dll AUTH-M-1-31.xml
 ```
 
 Customized test cases can be supplied behind all other arguments. This disables
-the builtin test cases.
+parsing input from STDIN.
+
+## Example
+
+### OpenSC's PKCS#11 library and a Yubikey
+
+The following output tested AUTH-M-1-31 `opensc-pkcs11.so`:
+```
+![pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml](example.gif "pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml") 
+```
+
+### SoftHSM
+
+Initialize SoftHSM with a PINs, key pair and add a certificate (`init.xml`) and
+run the test case for the Authentication Token Provider. `AUTH-M-1-31.xml` was
+adapted to support avoid static test case data, such as `Info.ManufacturerID`
+or the `Signature`.
+```
+$ cat src/test-cases/pkcs11-v3.1/softhsm-2.6.1/init.xml \
+    src/test-cases/pkcs11-v3.1/softhsm-2.6.1/AUTH-M-1-31.xml \
+    | target/release/pkcs11-test --module libsofthsm2.so
+
+Starting test STDIN test 1
+------------------------------------------------------------
+[PASS] C_Initialize
+[PASS] C_GetSlotList
+[PASS] C_InitToken
+[PASS] C_OpenSession
+[PASS] C_Login
+[PASS] C_InitPIN
+[PASS] C_Logout
+[PASS] C_Login
+[PASS] C_GenerateKeyPair
+[PASS] C_CreateObject
+[PASS] C_CreateObject
+[PASS] C_CreateObject
+[PASS] C_CreateObject
+[PASS] C_CreateObject
+[PASS] C_Finalize
+------------------------------------------------------------
+TEST SUMMARY: Total 15, Passed 15, Mismatches 1, Failed 0
+
+Starting test STDIN test 2
+------------------------------------------------------------
+[PASS] C_Initialize
+[PASS] C_GetInfo
+[PASS] C_GetSlotList
+[WARN] C_GetSlotList
+     ↳ SlotList.length
+       Expected 2, got 1
+[PASS] C_OpenSession
+[PASS] C_Login
+[PASS] C_FindObjectsInit
+[PASS] C_FindObjects
+[PASS] C_FindObjectsFinal
+[PASS] C_GetAttributeValue
+[PASS] C_FindObjectsInit
+[PASS] C_FindObjects
+[PASS] C_FindObjectsFinal
+[PASS] C_SignInit
+[PASS] C_Sign
+[PASS] C_Logout
+[PASS] C_CloseSession
+[PASS] C_CloseAllSessions
+[PASS] C_Finalize
+------------------------------------------------------------
+TEST SUMMARY: Total 19, Passed 19, Mismatches 1, Failed 0
+```
 
 ## Supports Functions
 
-[ ] `C_CloseAllSessions` (Currently, we only check whether all sessions have been terminated via `C_CloseSession`.)
-[x] `C_CloseSession`
-[x] `C_Finalize`
-[x] `C_FindObjects`
-[x] `C_FindObjectsFinal` (`C_FindObjectsFinal` is executed after each call of `C_FindObjects` and cannot be triggered seperately.)
-[x] `C_FindObjectsInit` (`C_FindObjectsInit` is executed before each call of `C_FindObjects` and cannot be triggered seperately.)
-[x] `C_GetAttributeValue`
-[x] `C_GetInfo`
-[x] `C_GetMechanismInfo`
-[x] `C_GetMechanismList`
-[x] `C_GetSlotInfo`
-[x] `C_GetSlotList`
-[x] `C_GetTokenInfo`
+[x] `C_GetFunctionList` (all further function calls are performed using the received interface)
+[x] `C_GetInterface` (all further function calls are performed using the received interface)
 [x] `C_Initialize`
+[x] `C_Finalize`
+[x] `C_GetInfo`
+[x] `C_GetSlotList`
+[x] `C_GetSlotInfo`
+[x] `C_GetTokenInfo`
+[x] `C_OpenSession`
+[x] `C_CloseSession`
+[x] `C_CloseAllSessions`
+[x] `C_SessionCancel`
+[x] `C_FindObjectsInit`
+[x] `C_FindObjects`
+[x] `C_FindObjectsFinal`
+[x] `C_CreateObject`
+[x] `C_CopyObject`
+[x] `C_DestroyObject`
+[x] `C_LoginUser`
 [x] `C_Login`
 [x] `C_Logout`
-[x] `C_OpenSession`
+[x] `C_SignRecoverInit`
+[x] `C_SignRecover`
+[x] `C_SignInit`
 [x] `C_Sign`
-[x] `C_SignInit` (`C_SignInit` is executed before each call of `C_Sign` and cannot be triggered seperately.)
+[x] `C_SignUpdate`
+[x] `C_SignFinal`
+[x] `C_MessageSignInit`
+[x] `C_SignMessage`
+[x] `C_EncryptInit`
+[x] `C_Encrypt`
+[x] `C_EncryptUpdate`
+[x] `C_EncryptFinal`
+[x] `C_DecryptInit`
+[x] `C_Decrypt`
+[x] `C_DecryptUpdate`
+[x] `C_DecryptFinal`
+[x] `C_DigestInit`
+[x] `C_Digest`
+[x] `C_DigestUpdate`
+[x] `C_DigestKey`
+[x] `C_DigestFinal`
+[x] `C_GetAttributeValue`
+[x] `C_SetAttributeValue`
+[x] `C_GetMechanismList`
+[x] `C_GetMechanismInfo`
+[x] `C_InitToken`
+[x] `C_InitPIN`
+[x] `C_SetPIN`
+[x] `C_GenerateKeyPair`
 
 ## Dynamic Data and User Input
 
