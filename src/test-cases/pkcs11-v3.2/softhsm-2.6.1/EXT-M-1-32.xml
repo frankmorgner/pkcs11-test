@@ -1,0 +1,146 @@
+<PKCS11>
+  <C_Initialize/>
+  <C_Initialize rv="OK"/>
+  <C_GetInfo/>
+  <C_GetInfo rv="OK">
+    <Info>
+      <CryptokiVersion major="${CryptokiVersion.major}" minor="${CryptokiVersion.minor}"/>
+      # use "fake" OASIS information so we don't use a vendor name
+      <ManufacturerID value="${Info.ManufacturerID}"/>
+      <Flags value="0x0"/>
+      <LibraryDescription value="${LibraryDescription}"/>
+      <LibraryVersion major="${LibraryVersion.major}" minor="${LibraryVersion.major}"/>
+    </Info>
+  </C_GetInfo>
+  <C_GetSlotList>
+    <TokenPresent value="true"/>
+    <SlotList/>
+  </C_GetSlotList>
+  <C_GetSlotList rv="OK">
+    <SlotList length="${SlotList.length}"/>
+  </C_GetSlotList>
+  <C_GetSlotList>
+    <TokenPresent value="true"/>
+    <SlotList length="${SlotList.length}"/>
+  </C_GetSlotList>
+  <C_GetSlotList rv="OK">
+    <SlotList>
+      <SlotID value="${SlotList.SlotID[0]}"/>
+    </SlotList>
+  </C_GetSlotList>
+  <C_GetSlotInfo>
+    <SlotID value="${SlotList.SlotID[0]}"/>
+  </C_GetSlotInfo>
+  <C_GetSlotInfo rv="OK">
+    <SlotInfo>
+      <SlotDescription value="${SlotDescription}"/>
+      <ManufacturerID value="${SlotInfo.ManufacturerID}"/>
+      <Flags value="TOKEN_PRESENT"/>
+      <HardwareVersion major="${HardwareVersion.major}" minor="${HardwareVersion.minor}"/>
+      <FirmwareVersion major="${FirmwareVersion.major}" minor="${FirmwareVersion.minor}"/>
+    </SlotInfo>
+  </C_GetSlotInfo>
+  <C_GetTokenInfo>
+    <SlotID value="${SlotList.SlotID[0]}"/>
+  </C_GetTokenInfo>
+  <C_GetTokenInfo rv="OK">
+    <TokenInfo>
+      <label value="token1                          "/>
+      <ManufacturerID value="${TokenInfo.ManufacturerID}"/>
+      <model value="${model}"/>
+      <serialNumber value="${serialNumber}"/>
+      <Flags value="RNG|LOGIN_REQUIRED|USER_PIN_INITIALIZED|RESTORE_KEY_NOT_NEEDED|TOKEN_INITIALIZED"/>
+      <MaxSessionCount value="${MaxSessionCount}"/>
+      <SessionCount value="${SessionCount}"/>
+      <MaxRwSessionCount value="${MaxRwSessionCount}"/>
+      <RwSessionCount value="${RwSessionCount}"/>
+      <MaxPinLen value="255"/>
+      <MinPinLen value="4"/>
+      <TotalPublicMemory value="${TotalPublicMemory}"/>
+      <FreePublicMemory value="${FreePublicMemory}"/>
+      <TotalPrivateMemory value="${TotalPrivateMemory}"/>
+      <FreePrivateMemory value="${FreePrivateMemory}"/>
+      <HardwareVersion major="${HardwareVersion.major}" minor="${HardwareVersion.minor}"/>
+      <FirmwareVersion major="${FirmwareVersion.major}" minor="${FirmwareVersion.minor}"/>
+      <utcTime value="${utcTime}"/>
+    </TokenInfo>
+  </C_GetTokenInfo>
+  <C_GetMechanismInfo>
+    <SlotID value="${SlotList.SlotID[0]}"/>
+    <Type value="SHA512"/>
+  </C_GetMechanismInfo>
+  <C_GetMechanismInfo rv="OK">
+    <MechanismInfo>
+      <MinKeySize value="0"/>
+      <MaxKeySize value="0"/>
+      <Flags value="DIGEST"/>
+    </MechanismInfo>
+  </C_GetMechanismInfo>
+  <C_GetMechanismInfo>
+    <SlotID value="${SlotList.SlotID[0]}"/>
+    <Type value="RSA_PKCS_KEY_PAIR_GEN"/>
+  </C_GetMechanismInfo>
+  <C_GetMechanismInfo rv="OK">
+    <MechanismInfo>
+      <MinKeySize value="512"/>
+      <MaxKeySize value="16384"/>
+      <Flags value="GENERATE_KEY_PAIR"/>
+    </MechanismInfo>
+  </C_GetMechanismInfo>
+  <C_GetMechanismInfo>
+    <SlotID value="${SlotList.SlotID[0]}"/>
+    <Type value="RSA_PKCS"/>
+  </C_GetMechanismInfo>
+  <C_GetMechanismInfo rv="OK">
+    <MechanismInfo>
+      <MinKeySize value="512"/>
+      <MaxKeySize value="16384"/>
+      <Flags value="ENCRYPT|DECRYPT|SIGN|VERIFY|WRAP|UNWRAP"/>
+    </MechanismInfo>
+  </C_GetMechanismInfo>
+  <C_OpenSession>
+    <SlotID value="${SlotList.SlotID[0]}"/>
+    <Flags value="RW_SESSION|SERIAL_SESSION"/>
+  </C_OpenSession>
+  <C_OpenSession rv="OK">
+    <Session value="${Session}"/>
+  </C_OpenSession>
+  <C_Login>
+    <Session value="${Session}"/>
+    <UserType value="USER"/>
+    <Pin value="${Pin}"/>
+  </C_Login>
+  <C_Login rv="OK"/>
+  <C_FindObjectsInit>
+    <Session value="${Session}"/>
+    <Template>
+      <Attribute type="TOKEN" value="TRUE"/>
+    </Template>
+  </C_FindObjectsInit>
+  <C_FindObjectsInit rv="OK"/>
+  <C_FindObjects>
+    <Session value="${Session}"/>
+    <Object length="1"/>
+  </C_FindObjects>
+  <C_FindObjects rv="OK">
+    <Object/>
+  </C_FindObjects>
+  <C_FindObjectsFinal>
+    <Session value="${Session}"/>
+  </C_FindObjectsFinal>
+  <C_FindObjectsFinal rv="OK"/>
+  <C_Logout>
+    <Session value="${Session}"/>
+  </C_Logout>
+  <C_Logout rv="OK"/>
+  <C_CloseSession>
+    <Session value="${Session}"/>
+  </C_CloseSession>
+  <C_CloseSession rv="OK"/>
+  <C_CloseAllSessions>
+    <SlotID value="${SlotList.SlotID[0]}"/>
+  </C_CloseAllSessions>
+  <C_CloseAllSessions rv="OK"/>
+  <C_Finalize/>
+  <C_Finalize rv="OK"/>
+</PKCS11>

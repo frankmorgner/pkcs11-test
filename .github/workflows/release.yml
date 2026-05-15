@@ -4,7 +4,7 @@ on:
   push:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -12,32 +12,88 @@ jobs:
       matrix:
         include:
           # Windows
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-          - os: windows-latest
-            target: aarch64-pc-windows-msvc
+          - os: windows-2025
+          - os: windows-11-arm
           # macOS
-          - os: macos-latest
-            target: aarch64-apple-darwin
-          - os: macos-latest
-            target: x86_64-apple-darwin
+          - os: macos-26
+          - os: macos-26-intel
           # Linux
-          #- os: ubuntu-latest
-            #target: aarch64-unknown-linux-musl
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-
-    name: Build ${{ matrix.target }}
+          - os: ubuntu-24.04
+          - os: ubuntu-24.04-arm
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - run: rustup target add ${{ matrix.target }}
-      - run: cargo build --release --target ${{ matrix.target }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/checkout@v6
+      - run: cargo build --release
+      - uses: actions/upload-artifact@v7
         with:
-          name: pkcs11-test_${{ matrix.target }}
+          name: pkcs11-test_${{ runner.os }}-${{ runner.arch }}
           path: |
-            target/${{ matrix.target }}/release/pkcs11-test*
+            target/release/pkcs11-test
+            target/release/pkcs11-test.exe
+            src/test-cases
             README.md
+      - &use_cache
+        uses: actions/cache@v5
+        id: cache-build
+        with:
+          path: ./*
+          key: ${{ matrix.os }}-${{ github.sha }}
+
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows
+          - os: windows-2025
+          - os: windows-11-arm
+          # macOS
+          - os: macos-26
+          - os: macos-26-intel
+          # Linux
+          - os: ubuntu-24.04
+          - os: ubuntu-24.04-arm
+    needs: [build, test]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/cache@v5
+        id: cache-build
+        with:
+          path: ./*
+          key: ${{ matrix.os }}-${{ github.sha }}
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS
+          - os: macos-26
+            softhsm: /opt/homebrew/Cellar/softhsm/*/lib/softhsm/libsofthsm2.so
+          - os: macos-26-intel
+            softhsm: /usr/local/Cellar/softhsm/*/lib/softhsm/libsofthsm2.so
+          # Linux
+          - os: ubuntu-24.04
+            softhsm: /usr/lib/softhsm/libsofthsm2.so
+          - os: ubuntu-24.04-arm
+            softhsm: /usr/lib/softhsm/libsofthsm2.so
+    runs-on: ${{ matrix.os }}
+    needs: [build]
+    steps:
+      - uses: actions/cache@v5
+        id: cache-build
+        with:
+          path: ./*
+          key: ${{ matrix.os }}-${{ github.sha }}
+      - if: runner.os == 'macOS'
+        run: brew install softhsm
+      - if: runner.os == 'Linux'
+        run: sudo apt-get install softhsm2
+      - run: find / 2>/dev/null | grep libsofthsm2.so
+      - run: target/release/pkcs11-test --module ${{ matrix.softhsm }} src/test-cases/pkcs11-v3.1/softhsm-2.6.1/init.xml
+      - run: target/release/pkcs11-test --module ${{ matrix.softhsm }} src/test-cases/pkcs11-v3.1/softhsm-2.6.1/AUTH-M-1-31.xml src/test-cases/pkcs11-v3.1/softhsm-2.6.1/BL-M-1-31.xml src/test-cases/pkcs11-v3.1/softhsm-2.6.1/CERT-M-1-31.xml src/test-cases/pkcs11-v3.1/softhsm-2.6.1/EXT-M-1-31.xml
+      - run: cat src/test-cases/pkcs11-v3.2/softhsm-2.6.1/AUTH-M-1-32.xml src/test-cases/pkcs11-v3.2/softhsm-2.6.1/BL-M-1-32.xml src/test-cases/pkcs11-v3.2/softhsm-2.6.1/CERT-M-1-32.xml src/test-cases/pkcs11-v3.2/softhsm-2.6.1/EXT-M-1-32.xml | target/release/pkcs11-test --module ${{ matrix.softhsm }}

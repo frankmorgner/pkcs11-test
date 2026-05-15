@@ -1,19 +1,11 @@
-<!--
-     PKCS #11 Profiles Version 3.1
-     Committee Specification 01
-     14 July 2022
-     Copyright (c) OASIS Open 2022. All Rights Reserved.
-     Source: https://docs.oasis-open.org/pkcs11/pkcs11-profiles/v3.1/cs01/test-cases/
-     Latest version of narrative specification: https://docs.oasis-open.org/pkcs11/pkcs11-profiles/v3.1/pkcs11-profiles-v3.1.html
-     TC IPR Statement: https://www.oasis-open.org/committees/pkcs11/ipr.php
--->
 <PKCS11>
   <C_Initialize/>
   <C_Initialize rv="OK"/>
   <C_GetInfo/>
   <C_GetInfo rv="OK">
     <Info>
-      <CryptokiVersion major="3" minor="1"/>
+      <CryptokiVersion major="3" minor="2"/>
+      # use "fake" OASIS information so we don't use a vendor name
       <ManufacturerID value="OASIS PKCS#11 TC                "/>
       <Flags value="0x0"/>
       <LibraryDescription value="                                "/>
@@ -111,7 +103,6 @@
     <Session value="${Session}"/>
     <Mechanism>
       <Type value="SHA256_RSA_PKCS"/>
-      <Parameter length="0"/>
     </Mechanism>
     <Key value="${Object.Object[0]}"/>
   </C_SignInit>
@@ -139,3 +130,4 @@
   <C_Finalize/>
   <C_Finalize rv="OK"/>
 </PKCS11>
+

@@ -1,11 +1,16 @@
 [package]
 name = "pkcs11-test"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cryptoki = "0.6.2"
-quick-xml = "0.31.0"
+serde = { version = "1.0", features = ["derive"] }
+cryptoki-sys = "0.5.0"
+quick-xml = { version = "0.31", features = ["serialize"] }
 clap = { version = "4.5.17", features = ["derive"]}
+libloading = "0.8.9"
+strum_macros = "0.28.0"
+num-traits = "0.2.19"
+colored = "3.1.1"
