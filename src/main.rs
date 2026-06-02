@@ -109,7 +109,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(xml_files) = args.xml_files {
         for test in xml_files {
             let test_content = std::fs::read_to_string(&test)?;
-            runner.run(&test_content.as_str())?;
+            runner.run(test_content.as_str())?;
             report::print_report(&test);
         }
     } else {

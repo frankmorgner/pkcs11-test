@@ -294,7 +294,7 @@ fn parse_ck_flags(
     flags: &str,
 ) -> Result<CK_FLAGS, Box<dyn std::error::Error>> {
     parse_numeric::<CK_FLAGS>(flags).or(
-        flags.split(|c| c == '|' || c == ' ')
+        flags.split(['|', ' '])
             .filter(|s| !s.is_empty())
             .try_fold(0, |acc, part| Ok(acc | parse_ck_flag(part)?))
     )
@@ -424,7 +424,7 @@ pub fn parse_attributes(
                         "VALIDATION" => CKO_VALIDATION,
                         "TRUST" => CKO_TRUST,
                         "VENDOR_DEFINED" => CKO_VENDOR_DEFINED,
-                        numeric_str => parse_numeric::<CK_OBJECT_CLASS>(numeric_str).map_err(|e| format!("{}", e))?,
+                        numeric_str => parse_numeric::<CK_OBJECT_CLASS>(numeric_str).map_err(|e| e.to_string())?,
                     };
                     NativeValue::Ulong(class_val)
                 }
@@ -436,13 +436,13 @@ pub fn parse_attributes(
                         "X_509_ATTR_CERT" => CKC_X_509_ATTR_CERT,
                         "WTLS" => CKC_WTLS,
                         "VENDOR_DEFINED" => CKC_VENDOR_DEFINED,
-                        numeric_str => parse_numeric::<CK_CERTIFICATE_TYPE>(numeric_str).map_err(|e| format!("{}", e))?,
+                        numeric_str => parse_numeric::<CK_CERTIFICATE_TYPE>(numeric_str).map_err(|e| e.to_string())?,
                     };
                     NativeValue::Ulong(class_val)
                 }
 
                 "MODULUS_BITS" => {
-                    let class_val = parse_numeric::<CK_ULONG>(str_value).map_err(|e| format!("{}", e))?;
+                    let class_val = parse_numeric::<CK_ULONG>(str_value).map_err(|e| e.to_string())?;
                     NativeValue::Ulong(class_val)
                 }
 
@@ -518,13 +518,13 @@ pub fn parse_attributes(
                         "VENDOR_DEFINED" => CKK_VENDOR_DEFINED,
                         "ECDSA" => CKK_ECDSA,
                         "CAST5" => CKK_CAST5,
-                        numeric_str => parse_numeric::<CK_KEY_TYPE>(numeric_str).map_err(|e| format!("{}", e))?,
+                        numeric_str => parse_numeric::<CK_KEY_TYPE>(numeric_str).map_err(|e| e.to_string())?,
                     };
                     NativeValue::Ulong(class_val)
                 }
 
                 // binary data & BigInts
-                _ => NativeValue::Bytes(parse_binary(str_value).map_err(|e| format!("{}", e))?)
+                _ => NativeValue::Bytes(parse_binary(str_value).map_err(|e| e.to_string())?)
             }
         };
 
@@ -1126,12 +1126,12 @@ fn get_variable<'a, T: Any>(
     }
 }
 
-fn get_numeric<T: Num>(
+fn get_numeric<T>(
     key: &str,
     variables: &HashMap<String, Box<dyn Any>>
 ) -> Result<T, ()>
 where
-    T: Clone + 'static
+    T: Clone + Num + 'static
 {
     if let Ok(v) = get_variable::<T>(key, variables) {
         return Ok(v.clone());
@@ -1334,9 +1334,9 @@ fn match_rv(
     let r = parse_ck_rv(expected)?;
 
     if r == *result {
-        return Ok(());
+        Ok(())
     } else {
-        return Err(format!("Expected 0x{:08X} ({:?}), got 0x{:08X}", r, expected, result).into());
+        Err(format!("Expected 0x{:08X} ({:?}), got 0x{:08X}", r, expected, result).into())
     }
 }
 
@@ -1347,9 +1347,9 @@ fn match_flags(
     let r = parse_ck_flags(expected)?;
 
     if r == *result {
-        return Ok(());
+        Ok(())
     } else {
-        return Err(format!("Expected 0x{:08X} ({:?}), got 0x{:08X}", r, expected, result).into());
+        Err(format!("Expected 0x{:08X} ({:?}), got 0x{:08X}", r, expected, result).into())
     }
 }
 
@@ -1360,9 +1360,9 @@ fn match_mechanism_type(
     let r = parse_mechanism_type(expected)?;
 
     if r == *result {
-        return Ok(());
+        Ok(())
     } else {
-        return Err(format!("Expected 0x{:08X} ({:?}), got 0x{:08X}", r, expected, result).into());
+        Err(format!("Expected 0x{:08X} ({:?}), got 0x{:08X}", r, expected, result).into())
     }
 }
 
@@ -1458,7 +1458,7 @@ impl P11TestRunner {
         let test_steps: PKCS11 = quick_xml::de::from_str(test)
             .inspect_err(|e| {
                 report::set_context("File parsing");
-                report::record_result(report::StepResult::Failed(format!("{}", e)));
+                report::record_result(report::StepResult::Failed(e.to_string()));
             })?;
         let mut variables: HashMap<String, Box<dyn Any>> = HashMap::new();
         for io_pair in test_steps.steps.as_deref().unwrap_or_default().chunks(2) {
@@ -1470,7 +1470,7 @@ impl P11TestRunner {
             };
             if std::mem::discriminant(input) != std::mem::discriminant(output) {
                 let e = format!("Wrong output type: {}", output);
-                report::record_result(report::StepResult::Failed(format!("{}", e)));
+                report::record_result(report::StepResult::Failed(e.to_string()));
                 return Err(e.into());
             }
             let r = match input {
@@ -1553,11 +1553,9 @@ impl P11TestRunner {
             self._functions = unsafe { copy_to_3_2(&*functions) };
         }
 
-        if let parser::TestStep::C_GetFunctionList { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_GetFunctionList { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -1592,23 +1590,18 @@ impl P11TestRunner {
                 if (*interface_version).major < 3 {
                     let functions_2_40 = interface_struct.pFunctionList as *const cryptoki_sys::CK_FUNCTION_LIST;
                     self._functions = copy_to_3_2(&*functions_2_40);
+                } else if (*interface_version).major == 3 && (*interface_version).minor < 2 {
+                    let functions_3_0 = interface_struct.pFunctionList as *const cryptoki_sys::CK_FUNCTION_LIST_3_0;
+                    self._functions = copy_to_3_2(&*functions_3_0);
                 } else {
-                    if (*interface_version).major == 3 && (*interface_version).minor < 2 {
-                        let functions_3_0 = interface_struct.pFunctionList as *const cryptoki_sys::CK_FUNCTION_LIST_3_0;
-                        self._functions = copy_to_3_2(&*functions_3_0);
-                    } else {
-                        self._functions = *(interface_struct.pFunctionList as *const cryptoki_sys::CK_FUNCTION_LIST_3_2);
-                    }
+                    self._functions = *(interface_struct.pFunctionList as *const cryptoki_sys::CK_FUNCTION_LIST_3_2);
                 }
-
             }
         }
 
-        if let parser::TestStep::C_GetFunctionList { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_GetFunctionList { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -1626,11 +1619,9 @@ impl P11TestRunner {
 
         let res = unsafe { initialize(ptr::null_mut()) };
 
-        if let parser::TestStep::C_Initialize { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_Initialize { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -1649,11 +1640,9 @@ impl P11TestRunner {
         let res = unsafe { finalize(ptr::null_mut()) };
 
 
-        if let parser::TestStep::C_Finalize { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_Finalize { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -1693,7 +1682,7 @@ impl P11TestRunner {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_get_slot_list(
@@ -1708,7 +1697,7 @@ impl P11TestRunner {
         let present = parse_boolean(token_present.value.as_str())?;
         let mut buffer: Vec<CK_SLOT_ID> = Vec::new();
         let (mut length, list) = if let Some(l) = &slot_list.length {
-            let len = fetch_numeric::<CK_ULONG>(&l, variables)?;
+            let len = fetch_numeric::<CK_ULONG>(l, variables)?;
             buffer = vec![0; len.try_into()?];
             (len.try_into()?, buffer.as_mut_ptr())
         } else {
@@ -1724,7 +1713,7 @@ impl P11TestRunner {
                     .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
             }
             if let Some(value) = &slot_list.length {
-                match_numeric(&value, length, variables)
+                match_numeric(value, length, variables)
                     .inspect_err(|e| log_mismatches!("SlotList.length", format!("{e}"))).ok();
             }
             if let Some(value) = &slot_list.slot_ids {
@@ -1739,7 +1728,7 @@ impl P11TestRunner {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_get_slot_info(
@@ -1798,7 +1787,7 @@ impl P11TestRunner {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_get_token_info(
@@ -1909,7 +1898,7 @@ impl P11TestRunner {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_open_session(
@@ -1940,7 +1929,7 @@ impl P11TestRunner {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_session_cancel(
@@ -1959,14 +1948,12 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { session_cancel(session_handle, f) };
 
-        if let parser::TestStep::C_SessionCancel { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_SessionCancel { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_close_session(
@@ -1983,14 +1970,12 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { close_session(session_handle) };
 
-        if let parser::TestStep::C_CloseSession { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_CloseSession { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_close_all_sessions(
@@ -2007,14 +1992,12 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { close_all_sessions(id) };
 
-        if let parser::TestStep::C_CloseAllSessions { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_CloseAllSessions { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_find_objects_init(
@@ -2027,21 +2010,19 @@ impl P11TestRunner {
             return Err("Missing required fields (Session, Template)".into());
         };
         let session_handle = fetch_numeric::<CK_SESSION_HANDLE>(session.value.as_str(), variables)?;
-        let (mut attributes, _memory_guard) = parse_attributes(&template)?;
+        let (mut attributes, _memory_guard) = parse_attributes(template)?;
         let p_template = attributes.as_mut_ptr();
         let ul_count = attributes.len().try_into()?;
         let find_objects_init = self._functions.C_FindObjectsInit
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { find_objects_init(session_handle, p_template, ul_count) };
 
-        if let parser::TestStep::C_FindObjectsInit { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_FindObjectsInit { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_find_objects(
@@ -2093,7 +2074,7 @@ impl P11TestRunner {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_find_objects_final(
@@ -2111,14 +2092,12 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { find_objects_final(session_handle) };
 
-        if let parser::TestStep::C_FindObjectsFinal { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_FindObjectsFinal { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_create_object(
@@ -2131,7 +2110,7 @@ impl P11TestRunner {
             return Err("Missing required fields (Session, Template)".into());
         };
         let session_handle = fetch_numeric::<CK_SESSION_HANDLE>(session.value.as_str(), variables)?;
-        let (mut attributes, _memory_guard) = parse_attributes(&template)?;
+        let (mut attributes, _memory_guard) = parse_attributes(template)?;
         let p_template = attributes.as_mut_ptr();
         let ul_count = attributes.len().try_into()?;
         let mut object_handle: CK_OBJECT_HANDLE = 0;
@@ -2152,7 +2131,7 @@ impl P11TestRunner {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_copy_object(
@@ -2166,7 +2145,7 @@ impl P11TestRunner {
         };
         let session_handle = fetch_numeric::<CK_SESSION_HANDLE>(session.value.as_str(), variables)?;
         let object_handle = fetch_numeric::<CK_OBJECT_HANDLE>(object.value.as_str(), variables)?;
-        let (mut attributes, _memory_guard) = parse_attributes(&template)?;
+        let (mut attributes, _memory_guard) = parse_attributes(template)?;
         let p_template = attributes.as_mut_ptr();
         let ul_count = attributes.len().try_into()?;
         let mut new_object_handle: CK_OBJECT_HANDLE = 0;
@@ -2207,11 +2186,9 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { destroy_object(session_handle, object_handle) };
 
-        if let parser::TestStep::C_DestroyObject { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_DestroyObject { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -2246,7 +2223,7 @@ impl P11TestRunner {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn _c_login_user(
@@ -2274,11 +2251,9 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { login_user(session_handle, user_type_val, p_pin, ul_pin_len, p_username, ul_username_len) };
 
-        if let parser::TestStep::C_LoginUser { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_LoginUser { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -2305,11 +2280,9 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { login(session_handle, user_type_val, p_pin, ul_pin_len) };
 
-        if let parser::TestStep::C_Login { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_Login { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -2330,11 +2303,9 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { logout(session_handle) };
 
-        if let parser::TestStep::C_Logout { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_Logout { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -2360,11 +2331,9 @@ impl P11TestRunner {
 
         let res = unsafe { message_sign_init(session_handle, &mut ck_mechanism, key_handle) };
 
-        if let parser::TestStep::C_MessageSignInit { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_MessageSignInit { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -2434,11 +2403,9 @@ impl P11TestRunner {
 
         let res = unsafe { sign_recover_init(session_handle, &mut ck_mechanism, key_handle) };
 
-        if let parser::TestStep::C_SignRecoverInit { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_SignRecoverInit { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -2505,11 +2472,9 @@ impl P11TestRunner {
 
         let res = unsafe { sign_init(session_handle, &mut ck_mechanism, key_handle) };
 
-        if let parser::TestStep::C_SignInit { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_SignInit { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -2575,11 +2540,9 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { sign_update(session_handle, p_part, ul_part_len) };
 
-        if let parser::TestStep::C_SignUpdate { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_SignUpdate { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -2644,11 +2607,9 @@ impl P11TestRunner {
 
         let res = unsafe { encrypt_init(session_handle, &mut ck_mechanism, key_handle) };
 
-        if let parser::TestStep::C_EncryptInit { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_EncryptInit { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -2796,11 +2757,9 @@ impl P11TestRunner {
 
         let res = unsafe { decrypt_init(session_handle, &mut ck_mechanism, key_handle) };
 
-        if let parser::TestStep::C_DecryptInit { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_DecryptInit { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -2945,11 +2904,9 @@ impl P11TestRunner {
 
         let res = unsafe { digest_init(session_handle, &mut ck_mechanism) };
 
-        if let parser::TestStep::C_DigestInit { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_DigestInit { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -3015,11 +2972,9 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { digest_update(session_handle, p_part, ul_part_len) };
 
-        if let parser::TestStep::C_DigestUpdate { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_DigestUpdate { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -3042,11 +2997,9 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { digest_key(session_handle, key_handle) };
 
-        if let parser::TestStep::C_DigestKey { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_DigestKey { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -3158,11 +3111,9 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { set_attribute_value(session_handle, object_handle, p_template, ul_count) };
 
-        if let parser::TestStep::C_SetAttributeValue { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_SetAttributeValue { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -3181,7 +3132,7 @@ impl P11TestRunner {
         let slot_id = fetch_numeric::<CK_SLOT_ID>(slot.value.as_str(), variables)?;
         let mut buffer: Vec<CK_MECHANISM_TYPE> = Vec::new();
         let (mut length, list) = if let Some(l) = &mechanism_list.length {
-            let len = fetch_numeric::<CK_ULONG>(&l, variables)?;
+            let len = fetch_numeric::<CK_ULONG>(l, variables)?;
             buffer = vec![0; len.try_into()?];
             (len.try_into()?, buffer.as_mut_ptr())
         } else {
@@ -3198,7 +3149,7 @@ impl P11TestRunner {
                     .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
             }
             if let Some(value) = &mechanism_list.length {
-                match_numeric(&value, length, variables)
+                match_numeric(value, length, variables)
                     .inspect_err(|e| log_mismatches!("MechanismList.length", format!("{e}"))).ok();
             }
             if let Some(ref typ) = mechanism_list.typ {
@@ -3290,11 +3241,9 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { init_token(id, p_pin, ul_pin_len, p_label) };
 
-        if let parser::TestStep::C_InitToken { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_InitToken { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -3320,11 +3269,9 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { init_pin(session_handle, p_pin, ul_pin_len) };
 
-        if let parser::TestStep::C_InitPIN { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_InitPIN { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())
@@ -3354,11 +3301,9 @@ impl P11TestRunner {
             .ok_or("Module doesn't implement call back")?;
         let res = unsafe { set_pin(session_handle, p_old_pin, ul_old_pin_len, p_new_pin, ul_new_pin_len) };
 
-        if let parser::TestStep::C_SetPIN { rv, .. } = output {
-            if let Some(value) = rv {
-                match_rv(value, &res)
-                    .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
-            }
+        if let parser::TestStep::C_SetPIN { rv: Some(value), .. } = output {
+            match_rv(value, &res)
+                .inspect_err(|e| log_mismatches!("rv", format!("{e}"))).ok();
         }
 
         Ok(())

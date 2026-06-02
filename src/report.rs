@@ -22,9 +22,9 @@ pub struct TestStep {
 }
 
 thread_local! {
-    static TEST_REPORT: RefCell<Vec<TestStep>> = RefCell::new(Vec::new());
-    static CURRENT_CONTEXT: RefCell<Option<(usize, String)>> = RefCell::new(None);
-    static CONTEXT_COUNTER: RefCell<usize> = RefCell::new(0);
+    static TEST_REPORT: RefCell<Vec<TestStep>> = const { RefCell::new(Vec::new()) };
+    static CURRENT_CONTEXT: RefCell<Option<(usize, String)>> = const { RefCell::new(None) };
+    static CONTEXT_COUNTER: RefCell<usize> = const { RefCell::new(0) };
 }
 
 pub fn set_context(name: &str) {
@@ -90,7 +90,7 @@ pub fn print_report(test_file: &str) {
                 stats.1 += 1; // counts as executed
                 stats.2 += list.len();
 
-                let is_new_context = last_warn_context_id.map_or(true, |id| id != step.context_id) || step.context_id == 0;
+                let is_new_context = (last_warn_context_id != Some(step.context_id)) || step.context_id == 0;
 
                 if is_new_context {
                     println!("{} {}", "[WARN]".yellow(), name.bold());
