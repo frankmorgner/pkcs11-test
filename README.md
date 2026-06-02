@@ -48,7 +48,7 @@ parsing input from STDIN.
 
 ## Examples
 
-### OpenSC's PKCS #11 library and a Yubikey
+### OpenSC's PKCS #11 library with a Yubikey
 
 The following output tested `AUTH-M-1-31.xml` against `opensc-pkcs11.so`:
 ```bash
@@ -57,7 +57,7 @@ target/release/pkcs11-test --module opensc-pkcs11.so \
 ```
 ![pkcs11-test Output](.github/example.gif "pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml")
 
-### SoftHSM
+### SoftHSM: Initialize and Sign
 
 Initialize SoftHSM with a PINs, key pair and add a certificate
 ([`init.xml`](src/test-cases/pkcs11-v3.1/softhsm-2.6.1/init.xml))
