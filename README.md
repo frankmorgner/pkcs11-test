@@ -1,6 +1,6 @@
 # pkcs11-test [![Release build](https://github.com/frankmorgner/pkcs11-test/actions/workflows/release.yml/badge.svg)](https://github.com/frankmorgner/pkcs11-test/actions/workflows/release.yml)
 
-## TL;DR: Run PKCS#11 Scripts Without Writing Code
+## TL;DR: Run PKCS #11 Scripts Without Writing Code
 
 - Runs official PKCS #11 conformance tests defined in XML files from PKCS #11 Profiles 3.1 and 3.2.
 - Executes custom XML scripts, making it useful as a scripting layer over PKCS #11 APIs.
@@ -26,10 +26,10 @@ scripted rather than compiled usage of PKCS #11 modules (see
 [examples](#examples) below).
 
 `pkcs11-test` ships with the following test scripts included (both version are supported):
-- Baseline Provider ([BL-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/BL-M-1-31.xml)/[BL-M-1-32](src/test-cases/pkcs11-v3.2/mandatory/BL-M-1-32.xml))
-- Extended Provider ([EXT-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/EXT-M-1-31.xml)/[EXT-M-1-32](src/test-cases/pkcs11-v3.2/mandatory/EXT-M-1-32.xml))
-- Authentication Token Provider ([AUTH-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/AUTH-M-1-31.xml)/[AUTH-M-1-32](src/test-cases/pkcs11-v3.2/mandatory/AUTH-M-1-32.xml))
-- Public Certificates Token Provider ([CERT-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/CERT-M-1-31.xml)/[CERT-M-1-32](src/test-cases/pkcs11-v3.2/mandatory/CERT-M-1-32.xml))
+- Baseline Provider ([`BL-M-1-31`](src/test-cases/pkcs11-v3.1/mandatory/BL-M-1-31.xml)/[`BL-M-1-32`](src/test-cases/pkcs11-v3.2/mandatory/BL-M-1-32.xml))
+- Extended Provider ([`EXT-M-1-31`](src/test-cases/pkcs11-v3.1/mandatory/EXT-M-1-31.xml)/[`EXT-M-1-32`](src/test-cases/pkcs11-v3.2/mandatory/EXT-M-1-32.xml))
+- Authentication Token Provider ([`AUTH-M-1-31`](src/test-cases/pkcs11-v3.1/mandatory/AUTH-M-1-31.xml)/[`AUTH-M-1-32`](src/test-cases/pkcs11-v3.2/mandatory/AUTH-M-1-32.xml))
+- Public Certificates Token Provider ([`CERT-M-1-31`](src/test-cases/pkcs11-v3.1/mandatory/CERT-M-1-31.xml)/[`CERT-M-1-32`](src/test-cases/pkcs11-v3.2/mandatory/CERT-M-1-32.xml))
 
 To run `AUTH-M-1-31.xml` against your PKCS #11 module, execute the following command:
 ```bash
@@ -51,14 +51,16 @@ parsing input from STDIN.
 ### OpenSC's PKCS #11 library and a Yubikey
 
 The following output tested `AUTH-M-1-31.xml` against `opensc-pkcs11.so`:
-![pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml](example.gif "pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml") 
+![pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml](example.gif "pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml")
 
 ### SoftHSM
 
-Initialize SoftHSM with a PINs, key pair and add a certificate (`init.xml`) and
-run the test case for the Authentication Token Provider. `AUTH-M-1-31.xml` was
-adapted to support avoid static test case data, such as `Info.ManufacturerID`
-or the `Signature`.
+Initialize SoftHSM with a PINs, key pair and add a certificate
+([`init.xml`](src/test-cases/pkcs11-v3.1/softhsm-2.6.1/init.xml))
+and run the test case for the Authentication Token Provider.
+[`AUTH-M-1-31.xml`](src/test-cases/pkcs11-v3.1/softhsm-2.6.1/AUTH-M-1-31.xml)
+was adapted to support avoid static test case data, such as
+`Info.ManufacturerID` or the `Signature`.
 ```bash session
 $ cat src/test-cases/pkcs11-v3.1/softhsm-2.6.1/init.xml \
     src/test-cases/pkcs11-v3.1/softhsm-2.6.1/AUTH-M-1-31.xml \
