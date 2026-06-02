@@ -1,15 +1,23 @@
-# Run PKCS#11 XML Scripts [![Release build](https://github.com/frankmorgner/pkcs11-test/actions/workflows/release.yml/badge.svg)](https://github.com/frankmorgner/pkcs11-test/actions/workflows/release.yml)
+# pkcs11-test [![Release build](https://github.com/frankmorgner/pkcs11-test/actions/workflows/release.yml/badge.svg)](https://github.com/frankmorgner/pkcs11-test/actions/workflows/release.yml)
 
-`pkcs11-test` allows running conformance test cases against a pkcs#11 provider.
+## TL;DR: Run PKCS#11 Scripts Without Writing Code
+
+- Runs official PKCS #11 conformance tests defined in XML files from PKCS #11 Profiles 3.1 and 3.2.
+- Executes custom XML scripts, making it useful as a scripting layer over PKCS #11 APIs.
+- Supports dynamic variables inside XML scripts from outputs for later calls or from environment variables
+
+## Overview
+
+`pkcs11-test` allows running conformance test cases against a PKCS #11 provider.
 The test cases were first defined in PKCS #11 version 3.1 and they include an
 informal description along with a test case description given in dedicated XML
 files.
 
-If no XML input files are specified, this program reads STDIN for PKCS#11 XML commands. All
-commands are performed with the given PKCS#11 module in the order in which they appear at
+If no XML input files are specified, this program reads STDIN for PKCS #11 XML commands. All
+commands are performed with the given PKCS #11 module in the order in which they appear at
 the input.
 
-`pkcs11-test` implements the PKCS#11 XML Representation defined in PKCS #11
+`pkcs11-test` implements the PKCS #11 XML Representation defined in PKCS #11
 Profiles Version [3.1](https://docs.oasis-open.org/pkcs11/pkcs11-profiles/v3.1/pkcs11-profiles-v3.1.html)
 and [3.2](https://docs.oasis-open.org/pkcs11/pkcs11-profiles/v3.2/pkcs11-profiles-v3.2.html).
 Although the specification was originally designed to define conformance tests
@@ -23,7 +31,7 @@ scripted rather than compiled usage of PKCS #11 modules (see
 - Authentication Token Provider ([AUTH-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/AUTH-M-1-31.xml)/[AUTH-M-1-32](src/test-cases/pkcs11-v3.2/mandatory/AUTH-M-1-32.xml))
 - Public Certificates Token Provider ([CERT-M-1-31](src/test-cases/pkcs11-v3.1/mandatory/CERT-M-1-31.xml)/[CERT-M-1-32](src/test-cases/pkcs11-v3.2/mandatory/CERT-M-1-32.xml))
 
-To run `AUTH-M-1-31.xml` against your PKCS#11 module, execute the following command:
+To run `AUTH-M-1-31.xml` against your PKCS #11 module, execute the following command:
 ```bash
 env Pin=123456 pkcs11-test --module /path/to/pkcs11-module.so AUTH-M-1-31.xml
 ```
@@ -40,7 +48,7 @@ parsing input from STDIN.
 
 ## Examples
 
-### OpenSC's PKCS#11 library and a Yubikey
+### OpenSC's PKCS #11 library and a Yubikey
 
 The following output tested `AUTH-M-1-31.xml` against `opensc-pkcs11.so`:
 ![pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml](example.gif "pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml") 
