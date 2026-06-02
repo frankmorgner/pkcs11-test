@@ -51,7 +51,7 @@ parsing input from STDIN.
 ### OpenSC's PKCS #11 library and a Yubikey
 
 The following output tested `AUTH-M-1-31.xml` against `opensc-pkcs11.so`:
-![pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml](example.gif "pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml")
+![pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml](.github/example.gif "pkcs11-test --module opensc-pkcs11.so AUTH-M-1-31.xml")
 
 ### SoftHSM
 
@@ -84,7 +84,7 @@ Starting test STDIN test 1
 [PASS] C_CreateObject
 [PASS] C_Finalize
 ------------------------------------------------------------
-TEST SUMMARY: Total 15, Passed 15, Mismatches 1, Failed 0
+TEST SUMMARY: Total 15, Passed 15, Mismatches 0, Failed 0
 
 Starting test STDIN test 2
 ------------------------------------------------------------
