@@ -1,3 +1,7 @@
+// pkcs11-test  Copyright (C)  Frank Morgner <frankmorgner@gmail.com>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
 #![allow(dead_code)]
 
 use serde::Deserialize;

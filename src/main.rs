@@ -1,3 +1,7 @@
+// pkcs11-test  Copyright (C)  Frank Morgner <frankmorgner@gmail.com>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
 mod parser;
 mod runner;
 mod report;
@@ -5,10 +9,10 @@ use runner::P11TestRunner;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-/// Run PKCS#11 XML Scripts
+/// Run PKCS #11 XML Scripts
 ///
 /// If no XML input files are specified, this program reads STDIN for PKCS#11 XML commands. All
-/// commands are performed with the given PKCS#11 module in the order in which they appear at
+/// commands are performed with the given PKCS #11 module in the order in which they appear at
 /// the input.
 ///
 /// The PKCS#11 XML script language is defined here (both version are supported)
