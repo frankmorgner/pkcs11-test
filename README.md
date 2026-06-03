@@ -31,20 +31,15 @@ scripted rather than compiled usage of PKCS #11 modules (see
 - Authentication Token Provider ([`AUTH-M-1-31`](src/test-cases/pkcs11-v3.1/mandatory/AUTH-M-1-31.xml)/[`AUTH-M-1-32`](src/test-cases/pkcs11-v3.2/mandatory/AUTH-M-1-32.xml))
 - Public Certificates Token Provider ([`CERT-M-1-31`](src/test-cases/pkcs11-v3.1/mandatory/CERT-M-1-31.xml)/[`CERT-M-1-32`](src/test-cases/pkcs11-v3.2/mandatory/CERT-M-1-32.xml))
 
-To run `AUTH-M-1-31.xml` against your PKCS #11 module, execute the following command:
+To run `CERT-M-1-31.xml` against your PKCS #11 module, execute the following command:
 ```bash
-env Pin=123456 pkcs11-test --module /path/to/pkcs11-module.so AUTH-M-1-31.xml
+pkcs11-test --module pkcs11-module.so CERT-M-1-31.xml
 ```
-The above command passes the token's PIN via the environment variable `$Pin`,
-which will be used for `AUTH-M-1-31.xml`. For Windows, the calling convention needs
-to be adjusted as follows:
-```cmd
-set Pin=123456
-pkcs11-test.exe --module /path/to/pkcs11-module.dll AUTH-M-1-31.xml
+Multiple XML files can be supplied behind all other arguments. If none are
+given, the tool reads its input from STDIN:
+```bash
+cat CERT-M-1-31.xml | pkcs11-test.exe --module pkcs11-module.dll
 ```
-
-Customized test cases can be supplied behind all other arguments. This disables
-parsing input from STDIN.
 
 ## Examples
 
@@ -117,59 +112,6 @@ Starting test STDIN test 2
 TEST SUMMARY: Total 19, Passed 19, Mismatches 1, Failed 0
 ```
 
-## Supports Functions
-
-- [x] `C_GetFunctionList` (all further function calls are performed using the received interface)
-- [x] `C_GetInterface` (all further function calls are performed using the received interface)
-- [x] `C_Initialize`
-- [x] `C_Finalize`
-- [x] `C_GetInfo`
-- [x] `C_GetSlotList`
-- [x] `C_GetSlotInfo`
-- [x] `C_GetTokenInfo`
-- [x] `C_OpenSession`
-- [x] `C_CloseSession`
-- [x] `C_CloseAllSessions`
-- [x] `C_SessionCancel`
-- [x] `C_FindObjectsInit`
-- [x] `C_FindObjects`
-- [x] `C_FindObjectsFinal`
-- [x] `C_CreateObject`
-- [x] `C_CopyObject`
-- [x] `C_DestroyObject`
-- [x] `C_LoginUser`
-- [x] `C_Login`
-- [x] `C_Logout`
-- [x] `C_SignRecoverInit`
-- [x] `C_SignRecover`
-- [x] `C_SignInit`
-- [x] `C_Sign`
-- [x] `C_SignUpdate`
-- [x] `C_SignFinal`
-- [x] `C_MessageSignInit`
-- [x] `C_SignMessage`
-- [x] `C_EncryptInit`
-- [x] `C_Encrypt`
-- [x] `C_EncryptUpdate`
-- [x] `C_EncryptFinal`
-- [x] `C_DecryptInit`
-- [x] `C_Decrypt`
-- [x] `C_DecryptUpdate`
-- [x] `C_DecryptFinal`
-- [x] `C_DigestInit`
-- [x] `C_Digest`
-- [x] `C_DigestUpdate`
-- [x] `C_DigestKey`
-- [x] `C_DigestFinal`
-- [x] `C_GetAttributeValue`
-- [x] `C_SetAttributeValue`
-- [x] `C_GetMechanismList`
-- [x] `C_GetMechanismInfo`
-- [x] `C_InitToken`
-- [x] `C_InitPIN`
-- [x] `C_SetPIN`
-- [x] `C_GenerateKeyPair`
-
 ## Dynamic Data and User Input
 
 A typical invocation of `C_GetSlotList` to get the number of available slots
@@ -239,3 +181,149 @@ defined in the test case.
 ```bash
 cargo build
 ```
+
+## Supported PKCS #11 interfaces
+
+`pkcs11-test` finds the PKCS #11 Cryptoki interface via `C_GetFunctionList`,
+hence it uses PKCS #11 2.40 function calls by default. Changing the interface
+functions is done via `C_GetInterface`:
+```xml
+  <C_GetInterface>
+    <InterfaceName />
+    <Version major="3" minor="0"/>
+    <Flags value="0"/>
+  </C_GetInterface>
+  <C_GetInterface rv="OK" />
+```
+If successful (`CKR_OK`), all further calls are executed with the new interface.
+
+### PKCS #11 2.40 and later
+
+- [x] `C_GetFunctionList` (sets call back functions to the found interface)
+- [x] `C_Initialize`
+- [x] `C_Finalize`
+- [x] `C_GetInfo`
+
+- [x] `C_GetSlotList`
+- [x] `C_GetSlotInfo`
+- [x] `C_GetTokenInfo`
+- [x] `C_GetMechanismList`
+- [x] `C_GetMechanismInfo`
+- [ ] `C_WaitForSlotEvent`
+
+- [x] `C_OpenSession`
+- [x] `C_CloseSession`
+- [x] `C_CloseAllSessions`
+- [ ] `C_GetSessionInfo`
+- [ ] `C_GetOperationState`
+- [ ] `C_SetOperationState`
+
+- [x] `C_Login`
+- [x] `C_Logout`
+
+- [x] `C_CreateObject`
+- [x] `C_CopyObject`
+- [x] `C_DestroyObject`
+- [ ] `C_GetObjectSize`
+- [x] `C_GetAttributeValue`
+- [x] `C_SetAttributeValue`
+- [x] `C_FindObjectsInit`
+- [x] `C_FindObjects`
+- [x] `C_FindObjectsFinal`
+
+- [x] `C_EncryptInit`
+- [x] `C_Encrypt`
+- [x] `C_EncryptUpdate`
+- [x] `C_EncryptFinal`
+
+- [x] `C_DecryptInit`
+- [x] `C_Decrypt`
+- [x] `C_DecryptUpdate`
+- [x] `C_DecryptFinal`
+
+- [x] `C_DigestInit`
+- [x] `C_Digest`
+- [x] `C_DigestUpdate`
+- [x] `C_DigestKey`
+- [x] `C_DigestFinal`
+
+- [x] `C_SignInit`
+- [x] `C_Sign`
+- [x] `C_SignUpdate`
+- [x] `C_SignFinal`
+- [x] `C_SignRecoverInit`
+- [x] `C_SignRecover`
+
+- [ ] `C_VerifyInit`
+- [ ] `C_Verify`
+- [ ] `C_VerifyUpdate`
+- [ ] `C_VerifyFinal`
+- [ ] `C_VerifyRecoverInit`
+- [ ] `C_VerifyRecover`
+
+- [ ] `C_DigestEncryptUpdate`
+- [ ] `C_DecryptDigestUpdate`
+- [ ] `C_SignEncryptUpdate`
+- [ ] `C_DecryptVerifyUpdate`
+
+- [ ] `C_GenerateKey`
+- [x] `C_GenerateKeyPair`
+- [ ] `C_WrapKey`
+- [ ] `C_UnwrapKey`
+- [ ] `C_DeriveKey`
+
+- [ ] `C_SeedRandom`
+- [ ] `C_GenerateRandom`
+
+- [ ] `C_GetFunctionStatus`
+- [ ] `C_CancelFunction`
+
+- [x] `C_InitToken`
+- [x] `C_InitPIN`
+- [x] `C_SetPIN`
+
+### PKCS #11 3.0 and later
+
+- [x] `C_GetInterface` (sets call back functions to the found interface)
+- [ ] `C_GetInterfaceList`
+
+- [x] `C_LoginUser`
+- [x] `C_SessionCancel`
+
+### PKCS #11 3.1 and later
+
+- [ ] `C_MessageEncryptInit`
+- [ ] `C_EncryptMessage`
+- [ ] `C_EncryptMessageBegin`
+- [ ] `C_EncryptMessageNext`
+- [ ] `C_MessageEncryptFinal`
+
+- [ ] `C_MessageDecryptInit`
+- [ ] `C_DecryptMessage`
+- [ ] `C_DecryptMessageBegin`
+- [ ] `C_DecryptMessageNext`
+- [ ] `C_MessageDecryptFinal`
+
+- [x] `C_MessageSignInit`
+- [x] `C_SignMessage`
+- [ ] `C_SignMessageBegin`
+- [ ] `C_SignMessageNext`
+- [ ] `C_MessageSignFinal`
+
+- [ ] `C_MessageVerifyInit`
+- [ ] `C_VerifyMessage`
+- [ ] `C_VerifyMessageBegin`
+- [ ] `C_VerifyMessageNext`
+- [ ] `C_MessageVerifyFinal`
+
+### PKCS #11 3.2
+
+- [ ] `C_GetSessionValidationFlags`
+
+- [ ] `C_WrapKeyAuthenticated`
+- [ ] `C_UnwrapKeyAuthenticated`
+
+- [ ] `C_EncapsulateKey`
+- [ ] `C_DecapsulateKey`
+
+- [ ] `C_AsyncComplete`
